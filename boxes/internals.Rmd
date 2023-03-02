@@ -1,0 +1,194 @@
+---
+title: "`box` internals"
+output: github_document
+knit: (function(inputFile, encoding) {
+      out_dir <- "../";
+      rmarkdown::render(inputFile,
+                        encoding=encoding,
+                        output_dir=file.path(dirname(inputFile), out_dir))})
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  collapse = TRUE,
+  comment = "#> ")
+options(width = 60)
+library(tidyverse)
+library(stringr)
+library(cli)
+library(sloop)
+source("../R/utils.R")
+```
+
+Package is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads with `pak::pkg_install()`.
+
+```{r pak-inst, eval=FALSE, message=FALSE}
+if (!requireNamespace('pak')) {
+    install.packages('pak', repos = 'https://r-lib.github.io/p/pak/dev/')
+}
+pak::pkg_install('klmr/box@dev')
+```
+
+
+# Internals
+
+For this example, we'll use the example in `box/`
+
+```{r tree-examples, echo=FALSE}
+fs::dir_tree("box/")
+```
+
+## `hello_world`
+
+Now assume we've stored the following module in `box/hello.R`:
+
+``` r
+#' @export
+hello = function (name) {
+    message('Hello, ', name, '!')
+}
+
+#' @export
+bye = function (name) {
+    message('Goodbye ', name, '!')
+}
+```
+
+To use this module, we can use `box::use()` and refer to the path (unquoted)
+
+```{r box-use}
+box::use(box/hello_world)
+hello_world
+```
+
+The functions are visible with `names()`
+
+```{r names-hello_world}
+names(hello_world)
+```
+
+To use the `hello()` and `bye()` functions in `box/hello_world.R`, we can use **`R script$function()`**:
+
+```{r use-box-fun}
+hello_world$hello('Martin')
+hello_world$bye('Martin')
+```
+
+## What is `hello_world`?
+
+We can use the `get_info()` function to explore it's contents:
+
+```{r get_info}
+get_info(hello_world)
+```
+
+This tells me there are multiple nested attributes in the `box$mod` class.
+
+## `"box$mod"`
+
+If we look at the structure of hello_world, we can see the multiple layers of attributes and classes: 
+
+```{r str-hello_world}
+str(hello_world)
+```
+### `"environment"` name
+
+```{r}
+environmentName(hello_world)
+```
+
+### "name"
+
+```{r attr-hello_world-name}
+attr(hello_world, "name")
+```
+
+This is a character vector 
+
+```{r attr-hello_world-name-class}
+attr(hello_world, "name") |> str()
+```
+
+### "spec"
+
+```{r attr-hello_world-spec, eval=FALSE}
+attr(hello_world, "spec")
+#> mod_spec(mod(box/hello_world))
+```
+
+This is a list of five items: 3 character vectors (`name`, `prefix`, `alias`), one logical vector (`explicit`), and one `NULL` value (`attach`)
+
+```{r attr-hello_world-spec-str}
+attr(hello_world, "spec") |> str()
+```
+
+There's also a nested class in the `"spec"`
+
+```{r attr-hello_world-spec-class}
+attr(hello_world, "spec") |> class()
+```
+
+### "info"
+
+The `"info"` attribute contains the full path to the module.
+
+```{r attr-hello_world-info, eval=FALSE}
+attr(hello_world, "info")
+#> <mod_info: hello_world at /Users/mjfrigaard/projects/rbox/boxes/box/hello_world.R>
+```
+
+The `"info"` attribute is a list with two items and two classes
+
+```{r attr-hello_world-info-str}
+attr(hello_world, "info") |> str()
+```
+The `"info"` attribute contains two classes:
+
+```{r attr-hello_world-info-class}
+attr(hello_world, "info") |> class()
+```
+
+The `"info"` attribute list has a `'name'`
+
+```{r attr-hello_world-info-name}
+attr(hello_world, "info")['name']
+```
+
+The `"info"` attribute list also has a `'source_path'`
+
+```{r attr-hello_world-info-source_path}
+attr(hello_world, "info")['source_path']
+```
+
+### "namespace"
+
+The namespace has an environment and three attributes (`"name"`, `"class"`, `"loading"`)
+
+```{r hello_world-namespace}
+attr(hello_world, "namespace")
+```
+The `"name"` of the `"namespace"` attributes is a character vector
+
+```{r attr-hello_world-namespace-name}
+attr(hello_world, "namespace") |> attr("name") |> str()
+```
+
+The `class` of the `"namespace"` attribute is `"box$ns"`
+
+```{r attr-hello_world-namespace-class}
+attr(hello_world, "namespace") |> class()
+```
+
+The `loading` attribute of the `"namespace"` attribute is a logical (`FALSE`)
+
+```{r hello_world-namespace-loading}
+attr(hello_world, "namespace") |> attr("loading") |> str()
+```
+
+
+
+
+
+
+

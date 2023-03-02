@@ -18,6 +18,7 @@ library(tidyverse)
 library(stringr)
 library(cli)
 library(sloop)
+source("../R/utils.R")
 ```
 
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads with `pak::pkg_install()`.
@@ -30,7 +31,7 @@ pak::pkg_install('klmr/box@dev')
 ```
 
 
-## Examples
+# Examples
 
 The examples are in `box/`
 
@@ -38,7 +39,7 @@ The examples are in `box/`
 fs::dir_tree("box/")
 ```
 
-### `hello_world`
+## `hello_world`
 
 Now assume we've stored the following module in `box/hello.R`:
 
@@ -58,7 +59,13 @@ To use this module, we can use `box::use()` and refer to the path (unquoted)
 
 ```{r box-use}
 box::use(box/hello_world)
-str(hello_world)
+hello_world
+```
+
+The functions are visible with `names()`
+
+```{r names-hello_world}
+names(hello_world)
 ```
 
 To use the `hello()` and `bye()` functions in `box/hello_world.R`, we can use **`R script$function()`**:
@@ -67,7 +74,3 @@ To use the `hello()` and `bye()` functions in `box/hello_world.R`, we can use **
 hello_world$hello('Martin')
 hello_world$bye('Martin')
 ```
-
-
-
-

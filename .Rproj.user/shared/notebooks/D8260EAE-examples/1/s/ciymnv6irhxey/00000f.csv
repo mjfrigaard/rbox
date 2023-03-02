@@ -1,4 +1,0 @@
-"0","box::use(boxes/hello_world)"
-"2","Error in box::use(boxes/hello_world) : 
-  unable to load module “boxes/hello_world”; not found in “/Library/Frameworks/R.framework/Versions/4.2/Resources/library/box/mod”, “/Users/mjfrigaard/projects/rbox/docs”
-"

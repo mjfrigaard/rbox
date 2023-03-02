@@ -276,6 +276,16 @@
       ],
       "Hash": "3f038e5ac7f41d4ac41ce658c85e3042"
     },
+    "codetools": {
+      "Package": "codetools",
+      "Version": "0.2-19",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "c089a619a7fae175d149d89164f8c7d8"
+    },
     "colorspace": {
       "Package": "colorspace",
       "Version": "2.1-0",
@@ -1723,6 +1733,22 @@
         "xtable"
       ],
       "Hash": "c2eae3d8c670fa9dfa35a12066f4a1d5"
+    },
+    "sloop": {
+      "Package": "sloop",
+      "Version": "1.0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "codetools",
+        "crayon",
+        "methods",
+        "purrr",
+        "rlang",
+        "tibble"
+      ],
+      "Hash": "1e77d63fe609b5b27a3d59a1f5c7a6c0"
     },
     "sourcetools": {
       "Package": "sourcetools",
