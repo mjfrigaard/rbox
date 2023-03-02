@@ -3,7 +3,7 @@
     "path": "~/projects/rbox/README.md",
     "project_path": "README.md",
     "type": "markdown",
-    "hash": "3181987619",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1677726038069.0,
@@ -16,14 +16,14 @@
         "rmdVisualWrapConfigured": "true",
         "docOutlineVisible": "0",
         "rmdVisualCollapsedChunks": "",
-        "rmdVisualModeLocation": "177:0"
+        "rmdVisualModeLocation": "6:0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1677728709,
+    "lastKnownWriteTime": 1677728937,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1677728709006,
+    "last_content_update": 1677728937213,
     "read_only": false,
     "read_only_alternatives": []
 }
