@@ -1,0 +1,68 @@
+url: http://klmr.me/box
+
+home:
+  title: '‘box’: Write Reusable, Composable and Modular R Code'
+
+reference:
+  - title: Using modules & packages
+    desc: Functions for users of modules and packages
+    contents:
+      - use
+  - title: Writing modules
+    desc: Infrastructure and utility functions for use inside modules
+    contents:
+      - export
+      - file
+      - name
+      - register_S3_method
+      - mod-hooks
+  - title: Interactive use
+    desc: Functions for use in interactive sessions and for testing
+    contents:
+      - help
+      - purge_cache
+      - reload
+      - script_path
+      - set_script_path
+      - unload
+
+navbar:
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: General topics
+        - text: Frequently asked questions
+          href: articles/faq.html
+        - text: Testing modules
+          href: articles/testing.html
+        - text: Using compiled code
+          href: articles/compiled-code.html
+        - text: Migration guide for version 1.0
+          href: articles/migration.html
+        - text: Similar packages
+          href: articles/related.html
+        - text: ---
+        - text: Implementation details
+        - text: The hierarchy of module environments
+          href: articles/mod-env-hierarchy.html
+
+template:
+  bootstrap: 5
+  params:
+    highlightcss: false
+  bslib:
+    primary: "#6877a1"
+    secondary: "#6877a1"
+    link_hover_color: "#33374d"
+    dropdown_link_active_color: "#edeef3"
+
+authors:
+  Konrad Rudolph:
+    href: https://klmr.me
+
+repo:
+  branch: main
+
+development:
+  mode: auto
