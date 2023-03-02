@@ -12,7 +12,7 @@ knit: (function(inputFile, encoding) {
 knitr::opts_chunk$set(
   echo = TRUE, 
   collapse = TRUE,
-  comment = "#> ")
+  comment = "#")
 options(width = 60)
 library(tidyverse)
 library(stringr)
@@ -36,7 +36,7 @@ pak::pkg_install('klmr/box@dev')
 The examples are in `box/`
 
 ```{r tree-examples, echo=FALSE}
-fs::dir_tree("box/")
+fs::dir_tree("box/", 1)
 ```
 
 ## `hello_world`
@@ -73,4 +73,86 @@ To use the `hello()` and `bye()` functions in `box/hello_world.R`, we can use **
 ```{r use-box-fun}
 hello_world$hello('Martin')
 hello_world$bye('Martin')
+```
+
+## `bio/`
+
+We'll run through the example from the [Get Started vignette](https://klmr.me/box/articles/box.html) (stored in `box/bio/`)
+
+```{r bio-str, echo=FALSE}
+fs::dir_tree("box/bio/")
+```
+
+To use this `box` module, we can run `box::use()` and pass the path to the script file containing the `box` functions
+
+```{r}
+box::use(box/bio/seq)
+seq
+```
+
+What is in `seq`? We can use `ls(seq)`
+
+```{r}
+ls(seq)
+```
+
+```{r}
+box::help(seq$revcomp)
+```
+Use `seq()` in `seq`
+
+```{r}
+s = seq$seq(
+    gene1 = 'GATTACAGATCAGCTCAGCACCTAGCACTATCAGCAAC',
+    gene2 = 'CATAGCAACTGACATCACAGCG'
+)
+s
+```
+
+```{r}
+seq$is_valid(s)
+```
+
+```{r}
+getS3method('print', 'bio/seq')
+```
+
+## Writing `box` modules 
+
+I am going to create a module that imports, performs some basic wrangling, and then visualizes a dataset. 
+
+The data comes from the [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) package (**which I will install but not load here**). 
+
+The url to the raw data as a .csv is stored in raw_csv_url: 
+
+```{r import-penguins, eval=FALSE}
+# box/penguins/import.R
+
+box::use(
+  vroom[vroom],
+)
+
+#' @export
+import_penguins <- function() {
+  raw_csv_url <- "https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv"
+  vroom(raw_csv_url)
+}
+```
+
+```{r import_penguins}
+# load import module
+box::use(
+  box/penguins/import
+)
+# use import_penguins
+import$import_penguins()
+```
+
+
+## Appendix 
+
+The `box/bio/seq.r` file contains the box module.
+
+```{r seq-r-lines, echo=FALSE, comment=" "}
+read_lines("box/bio/seq.r") |> writeLines()
 ```

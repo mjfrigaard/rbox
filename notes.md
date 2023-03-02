@@ -2,17 +2,12 @@
 ================
 
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks
-for installation, and then loads.
+for installation, and then loads `pak` with `pak::pkg_install()`
 
 ``` r
 if (!requireNamespace('pak')) {
     install.packages('pak', repos = 'https://r-lib.github.io/p/pak/dev/')
 }
-```
-
-`pak::pkg_install()` package below:
-
-``` r
 pak::pkg_install('klmr/box@dev')
 ```
 
@@ -45,34 +40,34 @@ packages,](https://r-pkgs.org/index.html)
 **“*How can I use a function from a package without loading ALL the
 functions in that package?*”**
 
-- This is essentially occurring when we use `package::function()`, but
-  the standard practice assumes we’ve imported all functions within the
+- This is essentially occurring when we use `pkg::fun()`, but the
+  standard practice assumes we’ve imported all functions within the
   package using `library(package)`
 
 - From help on `library`:
 
   <div>
 
-  > `library(package)` and `require(package)` both load the namespace of
-  > the package with `name package` and attach it on the search list.
+  > *`library(package)` and `require(package)` both load the namespace
+  > of the package with `name package` and attach it on the search list.
   > `require` is designed for use inside other functions; it returns
   > `FALSE` and gives a warning (rather than an error as `library()`
   > does by default) if the package does not exist. Both functions check
   > and update the list of currently attached packages and do not reload
-  > a namespace which is already loaded
+  > a namespace which is already loaded*
 
   </div>
 
 **“*Which function (`name`) comes from which package?*”**
 
-- Again, we can see this when we explicitly call `package::function()`,
-  but `box` uses **explicit** function and package **namespacing**
-- See the example below with `filter()`
+- Again, we can see this when we explicitly call `pkg::fun()`, but `box`
+  makes the function and package namespacing **explicit** by using:
 
-``` r
-stats::filter(x = ,)
-dplyr::filter(.data = )
-```
+  ``` r
+  box::use(pkg = [pkg, fun])
+  ```
+
+<!-- -->
 
 - If we’re developing a package, we can use `@import` or `@importFrom`,
   but these are only used in that context. The `roxygen2` package
