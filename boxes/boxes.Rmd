@@ -269,7 +269,7 @@ Check our scatter plot with `ggp2$scatter()`
 ggp2$scatter()
 ```
 
-![](scatter-out.png)
+![](https://raw.githubusercontent.com/mjfrigaard/rbox/main/boxes/scatter-out.png)
 
 
 

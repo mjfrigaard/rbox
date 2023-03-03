@@ -307,7 +307,7 @@ Check our scatter plot with `ggp2$scatter()`
 ggp2$scatter()
 ```
 
-![](scatter-out.png)
+![](https://raw.githubusercontent.com/mjfrigaard/rbox/main/boxes/scatter-out.png)
 
 <!--
 
@@ -401,7 +401,7 @@ getS3method('print', 'bio/seq')
 #   )
 #   invisible(x)
 # }
-# <environment: 0x7fcad54c79d8>
+# <environment: 0x7fa835cec3d8>
 ```
 
 ## Appendix
