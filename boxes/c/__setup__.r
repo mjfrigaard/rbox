@@ -1,4 +1,4 @@
-build_shared_lib = function (object_names) {
+build_shared_lib = function(object_names) {
     # Change working directory so R finds the Makevars.
     old_dir = setwd(box::file())
     on.exit(setwd(old_dir))

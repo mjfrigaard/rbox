@@ -3,7 +3,6 @@
 
 - <a href="#box-examples" id="toc-box-examples"><code>box</code>
   examples</a>
-  - <a href="#hello" id="toc-hello"><code>hello</code></a>
   - <a href="#composing-box-modules"
     id="toc-composing-box-modules">Composing <code>box</code> modules</a>
   - <a href="#penguins" id="toc-penguins"><code>penguins</code></a>
@@ -13,6 +12,7 @@
       <code>get_csv</code>)</a>
     - <a href="#clean" id="toc-clean"><code>clean</code></a>
     - <a href="#ggp2" id="toc-ggp2"><code>ggp2</code></a>
+  - <a href="#init" id="toc-init"><code>init</code></a>
 
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks
 for installation, and then loads with `pak::pkg_install()`.
@@ -28,55 +28,17 @@ pak::pkg_install('klmr/box@dev')
 
 The examples are in the directories below
 
-    # .
-    # ├── bio
-    # ├── c
-    # ├── hello
-    # └── penguins
-
-## `hello`
-
-The following module in `hello/hello.R`:
-
-``` r
-#' @export
-hello = function (name) {
-    message('Hello, ', name, '!')
-}
-
-#' @export
-bye = function (name) {
-    message('Goodbye ', name, '!')
-}
-```
-
-To use this module, we can use `box::use()` and refer to the path
-(unquoted)
-
-``` r
-box::use(hello/hello_world)
-hello_world
-# <module: hello/hello_world>
-```
-
-The functions are visible with `names()`
-
-``` r
-names(hello_world)
-# [1] "bye"   "hello"
-```
-
-To use the `hello()` and `bye()` functions in `box/hello_world.R`, we
-can use **`R script$function()`**:
-
-``` r
-hello_world$hello('Martin')
-# Hello, Martin!
-hello_world$bye('Martin')
-# Goodbye Martin!
-```
+    .
+    ├── bio
+    ├── c
+    ├── hello
+    └── penguins
 
 ## Composing `box` modules
+
+Below are some examples from the [`box` package
+website](https://klmr.me/box/index.html#loading-code) for including
+packages and functions.
 
 | Inside box::use()             | Action                                                                                     |
 |:------------------------------|:-------------------------------------------------------------------------------------------|
@@ -94,7 +56,8 @@ installed, but not loaded**).
 
 ### `import`
 
-Below we load the `import` module from `penguins`
+I’ll start with a simple `import` module from the `penguins` directory.
+The code below is stored in `penguins/import.R`:
 
 ``` r
 # penguins/import.R
@@ -110,6 +73,8 @@ import <- function() {
 }
 ```
 
+Load and use the module:
+
 ``` r
 # load import module
 box::use(
@@ -117,6 +82,15 @@ box::use(
 )
 # use import
 import$import()
+# Rows: 344 Columns: 17
+# ── Column specification ────────────────────────────────────
+# Delimiter: ","
+# chr  (9): studyName, Species, Region, Island, Stage, Ind...
+# dbl  (7): Sample Number, Culmen Length (mm), Culmen Dept...
+# date (1): Date Egg
+# 
+# ℹ Use `spec()` to retrieve the full column specification for this data.
+# ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 # # A tibble: 344 × 17
 #    studyName Sample Nu…¹ Species Region Island Stage Indiv…²
 #    <chr>           <dbl> <chr>   <chr>  <chr>  <chr> <chr>  
@@ -139,25 +113,32 @@ import$import()
 # #   abbreviated variable names ¹​`Sample Number`, …
 ```
 
+This is loading the raw penguins data from the url.
+
 ### `read` (with alias `get_csv`)
 
-I’ll create a new module (penguins) use an alias for `readr`s
-`read_csv()` function (`get_csv`) to import the raw `penguins` data
+I’ll create a new module in `penguins/` using an alias for `readr`s
+`read_csv()` function (`get_csv`) and include the `readr::cols()`
+function to remove the lengthy message.
+
+This code is stored in the `penguins/read.R` file:
 
 ``` r
 # penguins/read.R
 
 box::use(
-  readr[get_csv = read_csv]
+  readr[get_csv = read_csv, cols]
 )
 
 #' @export
 raw <- function() {
   raw_csv_url <- "https://bit.ly/3SQJ6E3"
   # use alias for read_csv()
-  get_csv(raw_csv_url)
+  get_csv(raw_csv_url, col_types = cols())
 }
 ```
+
+Load and use `read`
 
 ``` r
 # load import module
@@ -185,10 +166,19 @@ raw_peng |> head()
 # #   ¹​`Sample Number`, ²​`Individual ID`
 ```
 
+This is a much nicer output (and less to type!)
+
 ### `clean`
 
-Now that I can import the data, I will write a module for wrangling the
-data that also imports the \`read\`\` module.
+After importing the raw penguins data, I’ll write a module for wrangling
+the data (that also imports the \`read\`\` module).
+
+This module takes the following steps:
+
+- reset the `box.path`  
+- import the `penguins/read` module  
+- load the necessary functions from `dplyr`, `stringr`, and `janitor`  
+- compose `prep()` with wrangling steps
 
 ``` r
 # penguins/clean.R
@@ -244,10 +234,13 @@ clean$prep() |> str()
 #  $ sex              : Factor w/ 2 levels "FEMALE","MALE": 2 1 1 NA 1 2 1 2 NA NA ...
 ```
 
+These data look like they’re ready for graphing! Time to write another
+module…
+
 ### `ggp2`
 
-I can build my visualization with `ggplot2` (in the `ggp2.R` module) and
-`dplyr::filter()`:
+I will build my visualization with `ggplot2` (in the `penguins/ggp2.R`
+module) and `dplyr::filter()`:
 
 ``` r
 # penguins/ggp2.R
@@ -309,17 +302,88 @@ ggp2$scatter()
 
 ![](https://raw.githubusercontent.com/mjfrigaard/rbox/main/boxes/scatter-out.png)
 
+And there you have it! A complete pipeline using `box` modules. Next
+I’ll explore using `penguins/__init__.R`
+
+## `init`
+
+What does `__init__.R` do? Let’s check the `c/` modules to investigate:
+
+    c
+    ├── Makevars
+    ├── __init__.r
+    ├── __setup__.r
+    ├── hello.c
+    ├── hello.o
+    └── hello.so
+
+The `c/__init__.R` file is displayed below:
+
+``` r
+libname = function(name) {
+    box::file(paste0(name, .Platform$dynlib.ext))
+}
+
+.on_load = function(ns) {
+    ns$dll = dyn.load(libname('hello'))
+}
+
+.on_unload = function(ns) {
+    dyn.unload(libname('hello'))
+}
+
+#' @export
+hello_world = function(name) {
+    .Call(dll$hello_world, name)
+}
+```
+
 <!--
 
-+
-    labs(
-      x = "Body Mass (g)", 
-      y = "Flipper Length (mm)", 
-      title = "Flippers vs. Body Mass", 
-      subtitle = "Palmer Penguins"
-    ) + 
-    theme_minimal() + 
-    theme(legend.position = "none")
+## `hello`
+
+The following module in `hello/hello.R`:
+
+
+```r
+#' @export
+hello = function (name) {
+    message('Hello, ', name, '!')
+}
+
+#' @export
+bye = function (name) {
+    message('Goodbye ', name, '!')
+}
+```
+
+To use this module, we can use `box::use()` and refer to the path (unquoted)
+
+
+```r
+box::use(hello/hello_world)
+hello_world
+# <module: hello/hello_world>
+```
+
+The functions are visible with `names()`
+
+
+```r
+names(hello_world)
+# [1] "bye"   "hello"
+```
+
+To use the `hello()` and `bye()` functions in `box/hello_world.R`, we can use **`R script$function()`**:
+
+
+```r
+hello_world$hello('Martin')
+# Hello, Martin!
+hello_world$bye('Martin')
+# Goodbye Martin!
+```
+
 
 ## `bio/`
 
@@ -401,7 +465,7 @@ getS3method('print', 'bio/seq')
 #   )
 #   invisible(x)
 # }
-# <environment: 0x7fa835cec3d8>
+# <environment: 0x7fd4a9840a20>
 ```
 
 ## Appendix
