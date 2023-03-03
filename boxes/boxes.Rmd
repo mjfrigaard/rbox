@@ -1,11 +1,15 @@
 ---
 title: "`box` examples"
-output: github_document
+output:
+    github_document:
+        toc: true
+        toc_depth: 4
 knit: (function(inputFile, encoding) {
       out_dir <- "../";
       rmarkdown::render(inputFile,
                         encoding=encoding,
                         output_dir=file.path(dirname(inputFile), out_dir))})
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -14,11 +18,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#")
 options(width = 60)
-library(tidyverse)
-library(stringr)
 library(cli)
 library(sloop)
-source("../R/utils.R")
+library(fs)
+library(kableExtra)
 ```
 
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads with `pak::pkg_install()`.
@@ -30,20 +33,19 @@ if (!requireNamespace('pak')) {
 pak::pkg_install('klmr/box@dev')
 ```
 
+# `box` examples
 
-# Examples
-
-The examples are in `box/`
+The examples are in the directories below
 
 ```{r tree-examples, echo=FALSE}
-fs::dir_tree("box/", 1)
+fs::dir_tree(".", type = "dir", recurse = FALSE)
 ```
 
-## `hello_world`
+## `hello`
 
-Now assume we've stored the following module in `box/hello.R`:
+The following module in `hello/hello.R`:
 
-``` r
+```{r hello-module, eval=FALSE}
 #' @export
 hello = function (name) {
     message('Hello, ', name, '!')
@@ -58,7 +60,7 @@ bye = function (name) {
 To use this module, we can use `box::use()` and refer to the path (unquoted)
 
 ```{r box-use}
-box::use(box/hello_world)
+box::use(hello/hello_world)
 hello_world
 ```
 
@@ -75,33 +77,248 @@ hello_world$hello('Martin')
 hello_world$bye('Martin')
 ```
 
+## Composing `box` modules
+
+```{r box_use_df, eval=TRUE, echo=FALSE}
+box_use_df <- data.frame(
+  check.names = FALSE,
+  `Inside box::use()` = c(
+    "package", "pkg = package",
+    "package = package[foo, bar]", "package[my_foo = foo, ...]"
+  ),
+  Action = c(
+    "imports 'package', does not attach any function names",
+    "imports 'package' with alias ('pkg'), does not attach any function names",
+    "imports 'package' and attaches the function names 'package::foo()' and 'package::bar()'",
+    "imports 'package' with alias ('my_foo') for 'foo' and attaches all exported function names"
+  )
+)
+knitr::kable(box_use_df, format = "pipe")
+```
+
+## `penguins`
+
+Below I'm going to create a module that imports, wrangles, and visualizes data from the [palmerpenguins package.](https://allisonhorst.github.io/palmerpenguins/) (**which is installed, but not loaded**).
+
+### `import`
+
+Below we load the `import` module from `penguins`
+
+```{r import-penguins, eval=FALSE}
+# penguins/import.R
+
+box::use(
+  readr[read_csv],
+)
+
+#' @export
+import <- function() {
+  raw_csv_url <- "https://bit.ly/3SQJ6E3"
+  read_csv(raw_csv_url)
+}
+```
+
+
+
+```{r import}
+# load import module
+box::use(
+  penguins/import
+)
+# use import
+import$import()
+```
+
+### `read` (with alias `get_csv`)
+
+I'll create a new module (penguins) use an alias for `readr`s `read_csv()` function (`get_csv`) to import the raw `penguins` data
+
+```{r import-penguins-alias, eval=FALSE}
+# penguins/read.R
+
+box::use(
+  readr[get_csv = read_csv]
+)
+
+#' @export
+raw <- function() {
+  raw_csv_url <- "https://bit.ly/3SQJ6E3"
+  # use alias for read_csv()
+  get_csv(raw_csv_url)
+}
+```
+
+```{r import-read}
+# load import module
+box::use(
+  penguins/read
+)
+# use import
+raw_peng <- read$raw() 
+raw_peng |> head()
+```
+
+### `clean`
+
+Now that I can import the data, I will write a module for wrangling the data that also imports the `read`` module. 
+
+```{r wrangle-module, eval=FALSE}
+# penguins/clean.R
+
+# reset the path
+options(box.path = getwd())
+
+# import alias import module
+box::use(
+  penguins/read
+)
+
+# import wrangle pkgs/funs/aliases
+box::use(
+  dplyr[...],
+  stringr[str_ext = str_extract],
+  janitor[fix_cols = clean_names]
+)
+
+# wrangle data
+prep = function() {
+  raw <- read$raw()
+  clean_cols <- fix_cols(raw)
+  vars <- select(clean_cols, 
+    species, 
+    island, 
+    bill_length_mm = culmen_length_mm,
+    bill_depth_mm = culmen_depth_mm,
+    flipper_length_mm,
+    body_mass_g,
+    sex)
+  mutate(vars, 
+    species = str_ext(species, "([[:alpha:]]+)"),
+    sex = factor(sex))
+}
+```
+
+Load and use:
+
+```{r use-clean-prep}
+# load clean module
+box::use(
+  penguins/clean
+)
+clean$prep() |> str()
+```
+
+### `ggp2`
+
+I can build my visualization with `ggplot2` (in the `ggp2.R` module) and `dplyr::filter()`:
+
+```{r module-viz, eval=FALSE}
+# penguins/ggp2.R
+
+# reset the path
+options(box.path = getwd())
+
+# import clean module
+box::use(
+  penguins/clean
+)
+
+# import ggplot2
+box::use(
+  dplyr[filter],
+  ggplot2 = ggplot2[ggplot, aes, geom_point, facet_wrap, labs, theme_minimal]
+)
+
+#' @export
+scatter <- function() {
+  prepped <- clean$prep()
+  # remove missing sex
+  filtered <- filter(prepped, !is.na(sex)) |> 
+  plotted <- ggplot2$ggplot(data = filtered, 
+    ggplot2$aes(
+      x = flipper_length_mm,
+      y = body_mass_g,
+      group = sex
+    )
+  ) +
+    ggplot2$geom_point(
+      ggplot2$aes(color = island)
+    ) +
+    ggplot2$facet_wrap(. ~ sex) +
+    ggplot2$labs(
+      x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Island",
+      title = "Flipper vs. Body Mass", subtitle = "Palmer Penguins"
+    ) +
+    ggplot2$theme_minimal()
+  plotted
+}
+```
+
+load the `penguins/ggp2` module
+
+```{r use-ggp2}
+box::use(
+  penguins/ggp2
+)
+ggp2
+```
+
+Check our scatter plot with `ggp2$scatter()`
+
+```{r use-scatter, eval=FALSE}
+ggp2$scatter()
+```
+
+![](scatter-out.png)
+
+
+
+
+
+<!--
+
++
+    labs(
+      x = "Body Mass (g)", 
+      y = "Flipper Length (mm)", 
+      title = "Flippers vs. Body Mass", 
+      subtitle = "Palmer Penguins"
+    ) + 
+    theme_minimal() + 
+    theme(legend.position = "none")
+
 ## `bio/`
 
 We'll run through the example from the [Get Started vignette](https://klmr.me/box/articles/box.html) (stored in `box/bio/`)
 
 ```{r bio-str, echo=FALSE}
-fs::dir_tree("box/bio/")
+fs::dir_tree("bio/")
 ```
 
 To use this `box` module, we can run `box::use()` and pass the path to the script file containing the `box` functions
 
 ```{r}
-box::use(box/bio/seq)
+box::use(bio/seq)
 seq
 ```
 
-What is in `seq`? We can use `ls(seq)`
+*What is in `seq`?* 
+
+We can use `ls(seq)`
 
 ```{r}
 ls(seq)
 ```
 
-```{r}
+Accessing the help from `revcomp()`
+
+```{r help-revcomp}
 box::help(seq$revcomp)
 ```
-Use `seq()` in `seq`
 
-```{r}
+Using `seq()` in `seq`
+
+```{r use-seq-seq}
 s = seq$seq(
     gene1 = 'GATTACAGATCAGCTCAGCACCTAGCACTATCAGCAAC',
     gene2 = 'CATAGCAACTGACATCACAGCG'
@@ -109,50 +326,20 @@ s = seq$seq(
 s
 ```
 
-```{r}
+```{r is_valid-s}
 seq$is_valid(s)
 ```
 
-```{r}
+```{r revcomp}
 getS3method('print', 'bio/seq')
 ```
 
-## Writing `box` modules 
-
-I am going to create a module that imports, performs some basic wrangling, and then visualizes a dataset. 
-
-The data comes from the [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) package (**which I will install but not load here**). 
-
-The url to the raw data as a .csv is stored in raw_csv_url: 
-
-```{r import-penguins, eval=FALSE}
-# box/penguins/import.R
-
-box::use(
-  vroom[vroom],
-)
-
-#' @export
-import_penguins <- function() {
-  raw_csv_url <- "https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv"
-  vroom(raw_csv_url)
-}
-```
-
-```{r import_penguins}
-# load import module
-box::use(
-  box/penguins/import
-)
-# use import_penguins
-import$import_penguins()
-```
-
-
-## Appendix 
+## Appendix
 
 The `box/bio/seq.r` file contains the box module.
 
 ```{r seq-r-lines, echo=FALSE, comment=" "}
-read_lines("box/bio/seq.r") |> writeLines()
+readr::read_lines("bio/seq.r") |> writeLines()
 ```
+
+-->

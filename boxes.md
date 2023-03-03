@@ -1,6 +1,19 @@
 `box` examples
 ================
 
+- <a href="#box-examples" id="toc-box-examples"><code>box</code>
+  examples</a>
+  - <a href="#hello" id="toc-hello"><code>hello</code></a>
+  - <a href="#composing-box-modules"
+    id="toc-composing-box-modules">Composing <code>box</code> modules</a>
+  - <a href="#penguins" id="toc-penguins"><code>penguins</code></a>
+    - <a href="#import" id="toc-import"><code>import</code></a>
+    - <a href="#read-with-alias-get_csv"
+      id="toc-read-with-alias-get_csv"><code>read</code> (with alias
+      <code>get_csv</code>)</a>
+    - <a href="#clean" id="toc-clean"><code>clean</code></a>
+    - <a href="#ggp2" id="toc-ggp2"><code>ggp2</code></a>
+
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks
 for installation, and then loads with `pak::pkg_install()`.
 
@@ -11,27 +24,19 @@ if (!requireNamespace('pak')) {
 pak::pkg_install('klmr/box@dev')
 ```
 
-# Examples
+# `box` examples
 
-The examples are in `box/`
+The examples are in the directories below
 
-    # box/
+    # .
     # ├── bio
-    # │   ├── __init__.r
-    # │   ├── __tests__
-    # │   └── seq.r
     # ├── c
-    # │   ├── Makevars
-    # │   ├── __init__.r
-    # │   ├── __setup__.r
-    # │   └── hello.c
-    # ├── hello_world.R
+    # ├── hello
     # └── penguins
-    #     └── import.R
 
-## `hello_world`
+## `hello`
 
-Now assume we’ve stored the following module in `box/hello.R`:
+The following module in `hello/hello.R`:
 
 ``` r
 #' @export
@@ -49,9 +54,9 @@ To use this module, we can use `box::use()` and refer to the path
 (unquoted)
 
 ``` r
-box::use(box/hello_world)
+box::use(hello/hello_world)
 hello_world
-# <module: box/hello_world>
+# <module: hello/hello_world>
 ```
 
 The functions are visible with `names()`
@@ -71,119 +76,47 @@ hello_world$bye('Martin')
 # Goodbye Martin!
 ```
 
-## `bio/`
+## Composing `box` modules
 
-We’ll run through the example from the [Get Started
-vignette](https://klmr.me/box/articles/box.html) (stored in `box/bio/`)
+| Inside box::use()             | Action                                                                                     |
+|:------------------------------|:-------------------------------------------------------------------------------------------|
+| package                       | imports ‘package’, does not attach any function names                                      |
+| pkg = package                 | imports ‘package’ with alias (‘pkg’), does not attach any function names                   |
+| package = package\[foo, bar\] | imports ‘package’ and attaches the function names ‘package::foo()’ and ‘package::bar()’    |
+| package\[my_foo = foo, …\]    | imports ‘package’ with alias (‘my_foo’) for ‘foo’ and attaches all exported function names |
 
-    # box/bio/
-    # ├── __init__.r
-    # ├── __tests__
-    # │   ├── __init__.r
-    # │   ├── helper-module.r
-    # │   ├── test-seq.r
-    # │   └── test-table.r
-    # └── seq.r
+## `penguins`
 
-To use this `box` module, we can run `box::use()` and pass the path to
-the script file containing the `box` functions
+Below I’m going to create a module that imports, wrangles, and
+visualizes data from the [palmerpenguins
+package.](https://allisonhorst.github.io/palmerpenguins/) (**which is
+installed, but not loaded**).
 
-``` r
-box::use(box/bio/seq)
-seq
-# <module: box/bio/seq>
-```
+### `import`
 
-What is in `seq`? We can use `ls(seq)`
+Below we load the `import` module from `penguins`
 
 ``` r
-ls(seq)
-# [1] "is_valid" "revcomp"  "seq"      "table"
-```
-
-``` r
-box::help(seq$revcomp)
-# Loading required namespace: roxygen2
-```
-
-Use `seq()` in `seq`
-
-``` r
-s = seq$seq(
-    gene1 = 'GATTACAGATCAGCTCAGCACCTAGCACTATCAGCAAC',
-    gene2 = 'CATAGCAACTGACATCACAGCG'
-)
-s
-# 2 DNA sequences:
-#   >gene1
-#   GATTACAGATCAGCTCAGCACCTAGCA...
-#   >gene2
-#   CATAGCAACTGACATCACAGCG
-```
-
-``` r
-seq$is_valid(s)
-# [1] TRUE
-```
-
-``` r
-getS3method('print', 'bio/seq')
-# function(x) {
-#   box::use(stringr[trunc = str_trunc])
-# 
-#   if (is.null(names(x))) names(x) <- paste("seq", seq_along(x))
-# 
-#   cat(
-#     sprintf("%d DNA sequence%s:\n", length(x), if (length(x) == 1L) "" else "s"),
-#     sprintf("  >%s\n  %s\n", names(x), trunc(x, 30L)),
-#     sep = ""
-#   )
-#   invisible(x)
-# }
-# <environment: 0x7f8e90188808>
-```
-
-## Writing `box` modules
-
-I am going to create a module that imports, performs some basic
-wrangling, and then visualizes a dataset.
-
-The data comes from the
-[palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) package
-(**which I will install but not load here**).
-
-The url to the raw data as a .csv is stored in raw_csv_url:
-
-``` r
-# box/penguins/import.R
+# penguins/import.R
 
 box::use(
-  vroom[vroom],
+  readr[read_csv],
 )
 
 #' @export
-import_penguins <- function() {
-  raw_csv_url <- "https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins_raw.csv"
-  vroom(raw_csv_url)
+import <- function() {
+  raw_csv_url <- "https://bit.ly/3SQJ6E3"
+  read_csv(raw_csv_url)
 }
 ```
 
 ``` r
 # load import module
 box::use(
-  box/penguins/import
+  penguins/import
 )
-# use import_penguins
-import$import_penguins()
-# Rows: 344 Columns: 17
-# ── Column specification ────────────────────────────────────
-# Delimiter: ","
-# chr  (9): studyName, Species, Region, Island, Stage, Ind...
-# dbl  (7): Sample Number, Culmen Length (mm), Culmen Dept...
-# date (1): Date Egg
-# 
-# ℹ Use `spec()` to retrieve the full column specification for this data.
-# ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+# use import
+import$import()
 # # A tibble: 344 × 17
 #    studyName Sample Nu…¹ Species Region Island Stage Indiv…²
 #    <chr>           <dbl> <chr>   <chr>  <chr>  <chr> <chr>  
@@ -206,88 +139,358 @@ import$import_penguins()
 # #   abbreviated variable names ¹​`Sample Number`, …
 ```
 
+### `read` (with alias `get_csv`)
+
+I’ll create a new module (penguins) use an alias for `readr`s
+`read_csv()` function (`get_csv`) to import the raw `penguins` data
+
+``` r
+# penguins/read.R
+
+box::use(
+  readr[get_csv = read_csv]
+)
+
+#' @export
+raw <- function() {
+  raw_csv_url <- "https://bit.ly/3SQJ6E3"
+  # use alias for read_csv()
+  get_csv(raw_csv_url)
+}
+```
+
+``` r
+# load import module
+box::use(
+  penguins/read
+)
+# use import
+raw_peng <- read$raw() 
+raw_peng |> head()
+# # A tibble: 6 × 17
+#   studyName Sample Num…¹ Species Region Island Stage Indiv…²
+#   <chr>            <dbl> <chr>   <chr>  <chr>  <chr> <chr>  
+# 1 PAL0708              1 Adelie… Anvers Torge… Adul… N1A1   
+# 2 PAL0708              2 Adelie… Anvers Torge… Adul… N1A2   
+# 3 PAL0708              3 Adelie… Anvers Torge… Adul… N2A1   
+# 4 PAL0708              4 Adelie… Anvers Torge… Adul… N2A2   
+# 5 PAL0708              5 Adelie… Anvers Torge… Adul… N3A1   
+# 6 PAL0708              6 Adelie… Anvers Torge… Adul… N3A2   
+# # … with 10 more variables: `Clutch Completion` <chr>,
+# #   `Date Egg` <date>, `Culmen Length (mm)` <dbl>,
+# #   `Culmen Depth (mm)` <dbl>, `Flipper Length (mm)` <dbl>,
+# #   `Body Mass (g)` <dbl>, Sex <chr>,
+# #   `Delta 15 N (o/oo)` <dbl>, `Delta 13 C (o/oo)` <dbl>,
+# #   Comments <chr>, and abbreviated variable names
+# #   ¹​`Sample Number`, ²​`Individual ID`
+```
+
+### `clean`
+
+Now that I can import the data, I will write a module for wrangling the
+data that also imports the \`read\`\` module.
+
+``` r
+# penguins/clean.R
+
+# reset the path
+options(box.path = getwd())
+
+# import alias import module
+box::use(
+  penguins/read
+)
+
+# import wrangle pkgs/funs/aliases
+box::use(
+  dplyr[...],
+  stringr[str_ext = str_extract],
+  janitor[fix_cols = clean_names]
+)
+
+# wrangle data
+prep = function() {
+  raw <- read$raw()
+  clean_cols <- fix_cols(raw)
+  vars <- select(clean_cols, 
+    species, 
+    island, 
+    bill_length_mm = culmen_length_mm,
+    bill_depth_mm = culmen_depth_mm,
+    flipper_length_mm,
+    body_mass_g,
+    sex)
+  mutate(vars, 
+    species = str_ext(species, "([[:alpha:]]+)"),
+    sex = factor(sex))
+}
+```
+
+Load and use:
+
+``` r
+# load clean module
+box::use(
+  penguins/clean
+)
+clean$prep() |> str()
+# tibble [344 × 7] (S3: tbl_df/tbl/data.frame)
+#  $ species          : chr [1:344] "Adelie" "Adelie" "Adelie" "Adelie" ...
+#  $ island           : chr [1:344] "Torgersen" "Torgersen" "Torgersen" "Torgersen" ...
+#  $ bill_length_mm   : num [1:344] 39.1 39.5 40.3 NA 36.7 39.3 38.9 39.2 34.1 42 ...
+#  $ bill_depth_mm    : num [1:344] 18.7 17.4 18 NA 19.3 20.6 17.8 19.6 18.1 20.2 ...
+#  $ flipper_length_mm: num [1:344] 181 186 195 NA 193 190 181 195 193 190 ...
+#  $ body_mass_g      : num [1:344] 3750 3800 3250 NA 3450 ...
+#  $ sex              : Factor w/ 2 levels "FEMALE","MALE": 2 1 1 NA 1 2 1 2 NA NA ...
+```
+
+### `ggp2`
+
+I can build my visualization with `ggplot2` (in the `ggp2.R` module) and
+`dplyr::filter()`:
+
+``` r
+# penguins/ggp2.R
+
+# reset the path
+options(box.path = getwd())
+
+# import clean module
+box::use(
+  penguins/clean
+)
+
+# import ggplot2
+box::use(
+  dplyr[filter],
+  ggplot2 = ggplot2[ggplot, aes, geom_point, facet_wrap, labs, theme_minimal]
+)
+
+#' @export
+scatter <- function() {
+  prepped <- clean$prep()
+  # remove missing sex
+  filtered <- filter(prepped, !is.na(sex)) |> 
+  plotted <- ggplot2$ggplot(data = filtered, 
+    ggplot2$aes(
+      x = flipper_length_mm,
+      y = body_mass_g,
+      group = sex
+    )
+  ) +
+    ggplot2$geom_point(
+      ggplot2$aes(color = island)
+    ) +
+    ggplot2$facet_wrap(. ~ sex) +
+    ggplot2$labs(
+      x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Island",
+      title = "Flipper vs. Body Mass", subtitle = "Palmer Penguins"
+    ) +
+    ggplot2$theme_minimal()
+  plotted
+}
+```
+
+load the `penguins/ggp2` module
+
+``` r
+box::use(
+  penguins/ggp2
+)
+ggp2
+# <module: penguins/ggp2>
+```
+
+Check our scatter plot with `ggp2$scatter()`
+
+``` r
+ggp2$scatter()
+```
+
+![](scatter-out.png)
+
+<!--
+
++
+    labs(
+      x = "Body Mass (g)", 
+      y = "Flipper Length (mm)", 
+      title = "Flippers vs. Body Mass", 
+      subtitle = "Palmer Penguins"
+    ) + 
+    theme_minimal() + 
+    theme(legend.position = "none")
+
+## `bio/`
+
+We'll run through the example from the [Get Started vignette](https://klmr.me/box/articles/box.html) (stored in `box/bio/`)
+
+
+```
+# bio/
+# ├── __init__.r
+# ├── __tests__
+# │   ├── __init__.r
+# │   ├── helper-module.r
+# │   ├── test-seq.r
+# │   └── test-table.r
+# └── seq.r
+```
+
+To use this `box` module, we can run `box::use()` and pass the path to the script file containing the `box` functions
+
+
+```r
+box::use(bio/seq)
+seq
+# <module: bio/seq>
+```
+
+*What is in `seq`?* 
+
+We can use `ls(seq)`
+
+
+```r
+ls(seq)
+# [1] "is_valid" "revcomp"  "seq"      "table"
+```
+
+Accessing the help from `revcomp()`
+
+
+```r
+box::help(seq$revcomp)
+# Loading required namespace: roxygen2
+```
+
+Using `seq()` in `seq`
+
+
+```r
+s = seq$seq(
+    gene1 = 'GATTACAGATCAGCTCAGCACCTAGCACTATCAGCAAC',
+    gene2 = 'CATAGCAACTGACATCACAGCG'
+)
+s
+# 2 DNA sequences:
+#   >gene1
+#   GATTACAGATCAGCTCAGCACCTAGCA...
+#   >gene2
+#   CATAGCAACTGACATCACAGCG
+```
+
+
+```r
+seq$is_valid(s)
+# [1] TRUE
+```
+
+
+```r
+getS3method('print', 'bio/seq')
+# function(x) {
+#   box::use(stringr[trunc = str_trunc])
+# 
+#   if (is.null(names(x))) names(x) <- paste("seq", seq_along(x))
+# 
+#   cat(
+#     sprintf("%d DNA sequence%s:\n", length(x), if (length(x) == 1L) "" else "s"),
+#     sprintf("  >%s\n  %s\n", names(x), trunc(x, 30L)),
+#     sep = ""
+#   )
+#   invisible(x)
+# }
+# <environment: 0x7fcad54c79d8>
+```
+
 ## Appendix
 
 The `box/bio/seq.r` file contains the box module.
 
-      #' Biological sequences
-      #'
-      #' The \code{bio/seq} module provides a type for representing DNA sequences.
-      ".__module__."
-      
-      #' Test whether input is valid biological sequence
-      #' @param seq a character vector or \code{seq} object
-      #' @name seq
-      #' @export
-      is_valid <- function(seq) {
-        UseMethod("is_valid")
-      }
-      
-      is_valid.default <- function(seq) {
-        nucleotides <- unlist(strsplit(seq, ""))
-        nuc_index <- match(nucleotides, c("A", "C", "G", "T"))
-        !any(is.na(nuc_index))
-      }
-      
-      `is_valid.bio/seq` <- function(seq) {
-        TRUE
-      }
-      
-      #' Create a biological sequence
-      #'
-      #' \code{seq()} creates a set of nucleotide sequences from one or several
-      #' character vectors consisting of \code{A}, \code{C}, \code{G} and \code{T}.
-      #' @param ... optionally named character vectors representing DNA sequences.
-      #' @return Biological sequence equivalent to the input string.
-      #' @export
-      seq <- function(...) {
-        x <- toupper(c(...))
-        stopifnot(is_valid(x))
-        structure(x, class = "bio/seq")
-      }
-      
-      #' Print one or more biological sequences
-      `print.bio/seq` <- function(x) {
-        box::use(stringr[trunc = str_trunc])
-      
-        if (is.null(names(x))) names(x) <- paste("seq", seq_along(x))
-      
-        cat(
-          sprintf("%d DNA sequence%s:\n", length(x), if (length(x) == 1L) "" else "s"),
-          sprintf("  >%s\n  %s\n", names(x), trunc(x, 30L)),
-          sep = ""
-        )
-        invisible(x)
-      }
-      
-      box::register_S3_method("print", "bio/seq", `print.bio/seq`)
-      
-      #' Reverse complement
-      #'
-      #' The reverse complement of a sequence is its reverse, with all nucleotides
-      #' substituted by their base complement.
-      #' @param seq character vector of biological sequences
-      #' @name seq
-      #' @export
-      revcomp <- function(seq) {
-        nucleotides <- strsplit(seq, "")
-        complement <- lapply(nucleotides, chartr, old = "ACGT", new = "TGCA")
-        revcomp <- lapply(complement, rev)
-        seq(vapply(revcomp, paste, character(1L), collapse = ""))
-      }
-      
-      #' Tabulate nucleotides present in sequences
-      #' @param seq sequences
-      #' @return A \code{\link[base::table]{table}} for the nucleotides of each
-      #'  sequence in the input.
-      #' @name seq
-      #' @export
-      table <- function(seq) {
-        box::use(stats[set_names = setNames])
-        nucleotides <- lapply(strsplit(seq, ""), factor, c("A", "C", "G", "T"))
-        set_names(lapply(nucleotides, base::table, dnn = NULL), names(seq))
-      }
-      
-      if (is.null(box::name())) {
-        box::use(. / `__tests__`)
-      }
+
+```
+  #' Biological sequences
+  #'
+  #' The \code{bio/seq} module provides a type for representing DNA sequences.
+  ".__module__."
+  
+  #' Test whether input is valid biological sequence
+  #' @param seq a character vector or \code{seq} object
+  #' @name seq
+  #' @export
+  is_valid <- function(seq) {
+    UseMethod("is_valid")
+  }
+  
+  is_valid.default <- function(seq) {
+    nucleotides <- unlist(strsplit(seq, ""))
+    nuc_index <- match(nucleotides, c("A", "C", "G", "T"))
+    !any(is.na(nuc_index))
+  }
+  
+  `is_valid.bio/seq` <- function(seq) {
+    TRUE
+  }
+  
+  #' Create a biological sequence
+  #'
+  #' \code{seq()} creates a set of nucleotide sequences from one or several
+  #' character vectors consisting of \code{A}, \code{C}, \code{G} and \code{T}.
+  #' @param ... optionally named character vectors representing DNA sequences.
+  #' @return Biological sequence equivalent to the input string.
+  #' @export
+  seq <- function(...) {
+    x <- toupper(c(...))
+    stopifnot(is_valid(x))
+    structure(x, class = "bio/seq")
+  }
+  
+  #' Print one or more biological sequences
+  `print.bio/seq` <- function(x) {
+    box::use(stringr[trunc = str_trunc])
+  
+    if (is.null(names(x))) names(x) <- paste("seq", seq_along(x))
+  
+    cat(
+      sprintf("%d DNA sequence%s:\n", length(x), if (length(x) == 1L) "" else "s"),
+      sprintf("  >%s\n  %s\n", names(x), trunc(x, 30L)),
+      sep = ""
+    )
+    invisible(x)
+  }
+  
+  box::register_S3_method("print", "bio/seq", `print.bio/seq`)
+  
+  #' Reverse complement
+  #'
+  #' The reverse complement of a sequence is its reverse, with all nucleotides
+  #' substituted by their base complement.
+  #' @param seq character vector of biological sequences
+  #' @name seq
+  #' @export
+  revcomp <- function(seq) {
+    nucleotides <- strsplit(seq, "")
+    complement <- lapply(nucleotides, chartr, old = "ACGT", new = "TGCA")
+    revcomp <- lapply(complement, rev)
+    seq(vapply(revcomp, paste, character(1L), collapse = ""))
+  }
+  
+  #' Tabulate nucleotides present in sequences
+  #' @param seq sequences
+  #' @return A \code{\link[base::table]{table}} for the nucleotides of each
+  #'  sequence in the input.
+  #' @name seq
+  #' @export
+  table <- function(seq) {
+    box::use(stats[set_names = setNames])
+    nucleotides <- lapply(strsplit(seq, ""), factor, c("A", "C", "G", "T"))
+    set_names(lapply(nucleotides, base::table, dnn = NULL), names(seq))
+  }
+  
+  if (is.null(box::name())) {
+    box::use(. / `__tests__`)
+  }
+```
+
+-->

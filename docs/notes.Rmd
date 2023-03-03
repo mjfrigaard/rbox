@@ -14,9 +14,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#> ")
 options(width = 60)
-library(tidyverse)
-library(stringr)
-library(cli)
+library(rmarkdown)
+library(knitr)
 ```
 
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads `pak` with `pak::pkg_install()`
@@ -71,7 +70,7 @@ Traditionally **reusable code** is accomplished by creating [R packages,](https:
 -   If we're developing a package, we can use `@import` or `@importFrom`, but these are only used in that context. The `roxygen2` package converts the [tags into a **directive**](https://r-pkgs.org/dependencies-mindset-background.html#sec-dependencies-namespace):
 
 | `roxygen2`    | `NAMESPACE` directive                                                                                                     |
-|---------------|---------------------------------------------------------------------------------------------------------------------------|
+|--------------|----------------------------------------------------------|
 | `@importFrom` | `importFrom()` : import *selected* object from another `NAMESPACE` (including S4 generics)                                |
 | `@import`     | `import()`: import all objects from another package's `NAMESPACE`.                                                        |
 | `@export`     | `export()` : export the function, method, generic, or class so it's available outside of the package (in the `NAMESPACE`) |

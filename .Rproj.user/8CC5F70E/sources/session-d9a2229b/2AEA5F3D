@@ -3,7 +3,7 @@
     "path": "~/projects/rbox/boxes/boxes.Rmd",
     "project_path": "boxes/boxes.Rmd",
     "type": "r_markdown",
-    "hash": "1129992104",
+    "hash": "1957843479",
     "contents": "",
     "dirty": false,
     "created": 1677727660003.0,
@@ -12,16 +12,20 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "last_setup_crc32": "d9a2229b52577074",
-        "docOutlineSize": "133",
-        "docOutlineVisible": "1"
+        "last_setup_crc32": "d9a2229b6576841",
+        "docOutlineSize": "119",
+        "docOutlineVisible": "1",
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "rmdVisualModeLocation": "1699:1220",
+        "rmdVisualCollapsedChunks": ""
     },
     "folds": "",
-    "lastKnownWriteTime": 1677787104,
+    "lastKnownWriteTime": 1677822837,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1677787104323,
+    "last_content_update": 1677822837985,
     "read_only": false,
     "read_only_alternatives": []
 }

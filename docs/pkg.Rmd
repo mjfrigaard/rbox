@@ -14,9 +14,9 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#> ")
 options(width = 60)
-library(tidyverse)
-library(stringr)
-library(cli)
+library(rmarkdown)
+library(knitr)
+library(fs)
 ```
 
 Package is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads.

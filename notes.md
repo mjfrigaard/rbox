@@ -126,14 +126,10 @@ function:
 ``` r
 # what does search() do?
 search()
-#>   [1] ".GlobalEnv"        "package:cli"      
-#>   [3] "package:lubridate" "package:forcats"  
-#>   [5] "package:stringr"   "package:dplyr"    
-#>   [7] "package:purrr"     "package:readr"    
-#>   [9] "package:tidyr"     "package:tibble"   
-#>  [11] "package:ggplot2"   "package:tidyverse"
-#>  [13] "package:stats"     "package:graphics" 
-#>  [15] "package:grDevices" "package:utils"    
-#>  [17] "package:datasets"  "package:methods"  
-#>  [19] "Autoloads"         "package:base"
+#>   [1] ".GlobalEnv"        "package:knitr"    
+#>   [3] "package:rmarkdown" "package:stats"    
+#>   [5] "package:graphics"  "package:grDevices"
+#>   [7] "package:utils"     "package:datasets" 
+#>   [9] "package:methods"   "Autoloads"        
+#>  [11] "package:base"
 ```
