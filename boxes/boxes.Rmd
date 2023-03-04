@@ -1,5 +1,6 @@
 ---
-title: "`box` examples"
+title: "`box`es"
+subtitle: "Example box modules"
 output:
     github_document:
         toc: true
@@ -24,7 +25,7 @@ library(fs)
 library(kableExtra)
 ```
 
-Package is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads with `pak::pkg_install()`.
+`box` is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads with `pak::pkg_install()`.
 
 ```{r pak-inst, eval=FALSE, message=FALSE}
 if (!requireNamespace('pak')) {
@@ -48,14 +49,16 @@ Below are some examples from the [`box` package website](https://klmr.me/box/ind
 box_use_df <- data.frame(
   check.names = FALSE,
   `Inside box::use()` = c(
-    "package", "pkg = package",
-    "package = package[foo, bar]", "package[my_foo = foo, ...]"
+    "pkg", 
+    "p = pkg",
+    "pkg = pkg[foo, bar]", 
+    "pkg[my_foo = foo, ...]"
   ),
   Action = c(
-    "imports 'package', does not attach any function names",
-    "imports 'package' with alias ('pkg'), does not attach any function names",
-    "imports 'package' and attaches the function names 'package::foo()' and 'package::bar()'",
-    "imports 'package' with alias ('my_foo') for 'foo' and attaches all exported function names"
+    "imports 'pkg', does not attach any function names",
+    "imports 'pkg' with alias ('p'), does not attach any function names",
+    "imports 'pkg' and attaches the function names 'pkg::foo()' and 'pkg::bar()'",
+    "imports 'pkg' with alias for 'foo' ('my_foo') and attaches all exported function names"
   )
 )
 knitr::kable(box_use_df, format = "pipe")
@@ -256,34 +259,120 @@ ggp2$scatter()
 And there you have it! A complete pipeline using `box` modules. Next I'll explore using `penguins/__init__.R`
 
 
-## `init`
 
-What does `__init__.R` do? Let's check the `c/` modules to investigate:
 
-```{r c-dir, echo=FALSE, comment=""}
-fs::dir_tree("c")
+## `tidy`
+
+This is a simple example for the Rhino app post. 
+
+```{r tidy-dir, echo=FALSE, comment=""}
+fs::dir_tree("tidy")
 ```
 
-The `c/__init__.R` file is displayed below: 
+I'm going to be using the `tidyverse::tidyverse_logo()` to demonstrate different ways of importing a single function from a package in a `box` module. It's important to note `tidyverse` has been installed, but not loaded. 
 
-```{r c-init, eval=FALSE}
-libname = function(name) {
-    box::file(paste0(name, .Platform$dynlib.ext))
-}
+```{r, error=TRUE}
+tidyverse_logo()
+```
 
-.on_load = function(ns) {
-    ns$dll = dyn.load(libname('hello'))
-}
+#### `logo`
 
-.on_unload = function(ns) {
-    dyn.unload(libname('hello'))
-}
+Inside the `tidy/logo.R` is the `tidy/logo` module containing the following code for importing the `tidyverse_logo()` function from the `tidyverse` meta-package:
 
+```{r module-logo, eval=FALSE}
+# contents of tidy/logo.R
 #' @export
-hello_world = function(name) {
-    .Call(dll$hello_world, name)
-}
+box::use(
+  tidyverse[tidyverse_logo]
+  )
+```
 
+
+I can import the `tidyverse_logo()` function (and only this function) using the `tidy/logo` module:
+
+```{r use-logo}
+box::use(tidy/logo)
+logo
+ls(logo)
+```
+
+To use the `tidyverse_logo()` function, I use `$`:
+
+```{r run-logo}
+logo$tidyverse_logo()
+```
+
+
+#### `plogo` 
+
+We can also include `box::use()` to import `tidyverse_logo()` *inside* a custom function (`plogo`) 
+
+```{r plogo-module, eval=FALSE}
+# contents of tidy/plogo.R
+
+#' prints tidyverse logo
+#' @export
+print_logo = function(){
+  # import pkg[fun] inside function
+box::use(
+  tidyverse[tidyverse_logo])
+  # use fun
+    tidyverse_logo()
+}
+```
+
+Use this module just like `tidy/logo`:
+
+```{r use-plogo}
+box::use(tidy/plogo)
+ls(plogo)
+```
+
+```{r run-plogo}
+plogo$print_logo()
+```
+
+Both methods import `tidyverse`'s `tidyverse::tidyverse_logo()` function, but not the entire package: 
+
+```{r recheck-tidyverse_logo, error=TRUE}
+tidyverse_logo()
+```
+
+#### `tidy_logo`
+
+The `tidy_logo` module contains the following: 
+
+```{r module_tidy_logo, eval=FALSE}
+# contents of tidy/tidy_logo.R
+
+#' import alias tidyverse logo
+#' @export
+box::use(
+  tidyverse[tidy_logo = tidyverse_logo]
+  )
+
+#' prints tidyverse logo
+#' @export
+print_logo = function(){
+  # use fun alias
+    tidy_logo()
+}
+```
+
+Confirm both functions have been imported:
+
+```{r use_tidy_logo}
+box::use(tidy/tidy_logo)
+ls(tidy_logo)
+```
+
+Are these identical? 
+
+```{r identical_tidy_logo}
+identical(
+  x = tidy_logo$print_logo(), 
+  y = tidy_logo$tidy_logo()
+  )
 ```
 
 

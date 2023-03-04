@@ -1,4 +1,4 @@
-`box` examples
+`box`es
 ================
 
 - <a href="#box-examples" id="toc-box-examples"><code>box</code>
@@ -12,10 +12,13 @@
       <code>get_csv</code>)</a>
     - <a href="#clean" id="toc-clean"><code>clean</code></a>
     - <a href="#ggp2" id="toc-ggp2"><code>ggp2</code></a>
-  - <a href="#init" id="toc-init"><code>init</code></a>
+  - <a href="#tidy" id="toc-tidy"><code>tidy</code></a>
+    - <a href="#logo" id="toc-logo"><code>logo</code></a>
+    - <a href="#plogo" id="toc-plogo"><code>plogo</code></a>
+    - <a href="#tidy_logo" id="toc-tidy_logo"><code>tidy_logo</code></a>
 
-Package is loaded using [`pak`](https://pak.r-lib.org/), which checks
-for installation, and then loads with `pak::pkg_install()`.
+`box` is loaded using [`pak`](https://pak.r-lib.org/), which checks for
+installation, and then loads with `pak::pkg_install()`.
 
 ``` r
 if (!requireNamespace('pak')) {
@@ -31,8 +34,10 @@ The examples are in the directories below
     .
     ├── bio
     ├── c
+    ├── env
     ├── hello
-    └── penguins
+    ├── penguins
+    └── tidy
 
 ## Composing `box` modules
 
@@ -40,12 +45,12 @@ Below are some examples from the [`box` package
 website](https://klmr.me/box/index.html#loading-code) for including
 packages and functions.
 
-| Inside box::use()             | Action                                                                                     |
-|:------------------------------|:-------------------------------------------------------------------------------------------|
-| package                       | imports ‘package’, does not attach any function names                                      |
-| pkg = package                 | imports ‘package’ with alias (‘pkg’), does not attach any function names                   |
-| package = package\[foo, bar\] | imports ‘package’ and attaches the function names ‘package::foo()’ and ‘package::bar()’    |
-| package\[my_foo = foo, …\]    | imports ‘package’ with alias (‘my_foo’) for ‘foo’ and attaches all exported function names |
+| Inside box::use()      | Action                                                                                 |
+|:-----------------------|:---------------------------------------------------------------------------------------|
+| pkg                    | imports ‘pkg’, does not attach any function names                                      |
+| p = pkg                | imports ‘pkg’ with alias (‘p’), does not attach any function names                     |
+| pkg = pkg\[foo, bar\]  | imports ‘pkg’ and attaches the function names ‘pkg::foo()’ and ‘pkg::bar()’            |
+| pkg\[my_foo = foo, …\] | imports ‘pkg’ with alias for ‘foo’ (‘my_foo’) and attaches all exported function names |
 
 ## `penguins`
 
@@ -305,37 +310,142 @@ ggp2$scatter()
 And there you have it! A complete pipeline using `box` modules. Next
 I’ll explore using `penguins/__init__.R`
 
-## `init`
+## `tidy`
 
-What does `__init__.R` do? Let’s check the `c/` modules to investigate:
+This is a simple example for the Rhino app post.
 
-    c
-    ├── Makevars
-    ├── __init__.r
-    ├── __setup__.r
-    ├── hello.c
-    ├── hello.o
-    └── hello.so
+    tidy
+    ├── logo.R
+    ├── plogo.R
+    └── tidy_logo.R
 
-The `c/__init__.R` file is displayed below:
+I’m going to be using the `tidyverse::tidyverse_logo()` to demonstrate
+different ways of importing a single function from a package in a `box`
+module. It’s important to note `tidyverse` has been installed, but not
+loaded.
 
 ``` r
-libname = function(name) {
-    box::file(paste0(name, .Platform$dynlib.ext))
-}
+tidyverse_logo()
+# Error in tidyverse_logo(): could not find function "tidyverse_logo"
+```
 
-.on_load = function(ns) {
-    ns$dll = dyn.load(libname('hello'))
-}
+#### `logo`
 
-.on_unload = function(ns) {
-    dyn.unload(libname('hello'))
-}
+Inside the `tidy/logo.R` is the `tidy/logo` module containing the
+following code for importing the `tidyverse_logo()` function from the
+`tidyverse` meta-package:
 
+``` r
+# contents of tidy/logo.R
 #' @export
-hello_world = function(name) {
-    .Call(dll$hello_world, name)
+box::use(
+  tidyverse[tidyverse_logo]
+  )
+```
+
+I can import the `tidyverse_logo()` function (and only this function)
+using the `tidy/logo` module:
+
+``` r
+box::use(tidy/logo)
+logo
+# <module: tidy/logo>
+ls(logo)
+# [1] "tidyverse_logo"
+```
+
+To use the `tidyverse_logo()` function, I use `$`:
+
+``` r
+logo$tidyverse_logo()
+# ⬢ __  _    __   .    ⬡           ⬢  . 
+#  / /_(_)__/ /_ ___  _____ _______ ___ 
+# / __/ / _  / // / |/ / -_) __(_-</ -_)
+# \__/_/\_,_/\_, /|___/\__/_/ /___/\__/ 
+#      ⬢  . /___/      ⬡      .       ⬢
+```
+
+#### `plogo`
+
+We can also include `box::use()` to import `tidyverse_logo()` *inside* a
+custom function (`plogo`)
+
+``` r
+# contents of tidy/plogo.R
+
+#' prints tidyverse logo
+#' @export
+print_logo = function(){
+  # import pkg[fun] inside function
+box::use(
+  tidyverse[tidyverse_logo])
+  # use fun
+    tidyverse_logo()
 }
+```
+
+Use this module just like `tidy/logo`:
+
+``` r
+box::use(tidy/plogo)
+ls(plogo)
+# [1] "print_logo"
+```
+
+``` r
+plogo$print_logo()
+# ⬢ __  _    __   .    ⬡           ⬢  . 
+#  / /_(_)__/ /_ ___  _____ _______ ___ 
+# / __/ / _  / // / |/ / -_) __(_-</ -_)
+# \__/_/\_,_/\_, /|___/\__/_/ /___/\__/ 
+#      ⬢  . /___/      ⬡      .       ⬢
+```
+
+Both methods import `tidyverse`’s `tidyverse::tidyverse_logo()`
+function, but not the entire package:
+
+``` r
+tidyverse_logo()
+# Error in tidyverse_logo(): could not find function "tidyverse_logo"
+```
+
+#### `tidy_logo`
+
+The `tidy_logo` module contains the following:
+
+``` r
+# contents of tidy/tidy_logo.R
+
+#' import alias tidyverse logo
+#' @export
+box::use(
+  tidyverse[tidy_logo = tidyverse_logo]
+  )
+
+#' prints tidyverse logo
+#' @export
+print_logo = function(){
+  # use fun alias
+    tidy_logo()
+}
+```
+
+Confirm both functions have been imported:
+
+``` r
+box::use(tidy/tidy_logo)
+ls(tidy_logo)
+# [1] "print_logo" "tidy_logo"
+```
+
+Are these identical?
+
+``` r
+identical(
+  x = tidy_logo$print_logo(), 
+  y = tidy_logo$tidy_logo()
+  )
+# [1] TRUE
 ```
 
 <!--
@@ -465,7 +575,7 @@ getS3method('print', 'bio/seq')
 #   )
 #   invisible(x)
 # }
-# <environment: 0x7fd4a9840a20>
+# <environment: 0x7fab389cb9f0>
 ```
 
 ## Appendix
