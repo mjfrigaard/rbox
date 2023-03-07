@@ -10,6 +10,7 @@ knit: (function(inputFile, encoding) {
       rmarkdown::render(inputFile,
                         encoding=encoding,
                         output_dir=file.path(dirname(inputFile), out_dir))})
+                        
 always_allow_html: true
 ---
 
@@ -17,17 +18,26 @@ always_allow_html: true
 knitr::opts_chunk$set(
   echo = TRUE, 
   collapse = TRUE,
+  error = TRUE,
   comment = "#")
 options(width = 60)
 library(cli)
 library(sloop)
 library(fs)
 library(kableExtra)
+library(extrafont)
+extrafont::loadfonts(quiet = TRUE)
+# remotes::install_github("yixuan/showtext", force = TRUE)
+library(showtext)
+sysfonts::font_add("Arial", "/Library/Fonts/Arial.ttf")
+showtext::showtext_auto()
 ```
 
-`box` is loaded using [`pak`](https://pak.r-lib.org/), which checks for installation, and then loads with `pak::pkg_install()`.
+Load `box`
 
 ```{r pak-inst, eval=FALSE, message=FALSE}
+# load with pak:
+# https://pak.r-lib.org/
 if (!requireNamespace('pak')) {
     install.packages('pak', repos = 'https://r-lib.github.io/p/pak/dev/')
 }
@@ -62,6 +72,208 @@ box_use_df <- data.frame(
   )
 )
 knitr::kable(box_use_df, format = "pipe")
+```
+
+
+## `tidy`
+
+This is a simple example for the Rhino app post. 
+
+```{r tidy-dir, echo=FALSE, comment=""}
+fs::dir_tree("tidy")
+```
+
+I'm going to be using the `tidyverse::tidyverse_logo()` to demonstrate different ways of importing a single function from a package in a `box` module. It's important to note `tidyverse` has been installed, but not loaded. 
+
+```{r, error=TRUE}
+tidyverse_logo()
+```
+
+#### `logo`
+
+Inside the `tidy/logo.R` is the `tidy/logo` module containing the following code for importing the `tidyverse_logo()` function from the `tidyverse` meta-package:
+
+```{r module-logo, eval=FALSE}
+# contents of tidy/logo.R
+#' @export
+box::use(
+  tidyverse[tidyverse_logo]
+  )
+```
+
+
+I can import the `tidyverse_logo()` function (and only this function) using the `tidy/logo` module:
+
+```{r use-logo}
+box::use(tidy/logo)
+logo
+ls(logo)
+```
+
+To use the `tidyverse_logo()` function, I use `$`:
+
+```{r run-logo}
+logo$tidyverse_logo()
+```
+
+
+#### `plogo` 
+
+We can also include `box::use()` to import `tidyverse_logo()` *inside* a custom function (`plogo`) 
+
+```{r plogo-module, eval=FALSE}
+# contents of tidy/plogo.R
+
+#' prints tidyverse logo
+#' @export
+print_logo = function(){
+  # import pkg[fun] inside function
+box::use(
+  tidyverse[tidyverse_logo])
+  # use fun
+    tidyverse_logo()
+}
+```
+
+Use this module just like `tidy/logo`:
+
+```{r use-plogo}
+box::use(tidy/plogo)
+ls(plogo)
+```
+
+```{r run-plogo}
+plogo$print_logo()
+```
+
+Both methods import `tidyverse`'s `tidyverse::tidyverse_logo()` function, but not the entire package: 
+
+```{r recheck-tidyverse_logo, error=TRUE}
+tidyverse_logo()
+```
+
+#### `tidy_logo`
+
+The `tidy_logo` module contains the following: 
+
+```{r module_tidy_logo, eval=FALSE}
+# contents of tidy/tidy_logo.R
+
+#' import alias tidyverse logo
+#' @export
+box::use(
+  tidyverse[tidy_logo = tidyverse_logo]
+  )
+
+#' prints tidyverse logo
+#' @export
+print_logo = function(){
+  # use fun alias
+    tidy_logo()
+}
+```
+
+Confirm both functions have been imported:
+
+```{r use_tidy_logo}
+box::use(tidy/tidy_logo)
+ls(tidy_logo)
+```
+
+Are these identical? 
+
+```{r identical_tidy_logo}
+identical(
+  x = tidy_logo$print_logo(), 
+  y = tidy_logo$tidy_logo()
+  )
+```
+
+
+## `ggp2`
+
+First we'll build a graph using the `ggplot2` functions and from the package namespace: 
+
+### `ggplot2::`
+
+```{r namespace}
+ggplot2::ggplot(data = ggplot2::mpg, 
+  ggplot2::aes(x = displ, y = hwy)) + 
+  ggplot2::geom_point()
+```
+
+In the `ggp2/` folder, we create the following files. 
+
+```{r tree-ggp2, echo=FALSE}
+fs::dir_tree("ggp2")
+```
+
+### `gg`
+
+The `gg` module imports the full `ggplot2` package, but with `the` gg alias.
+
+```{r module-gg, eval=FALSE}
+#' Exporting ggplot2
+#'
+#' The \code{ggp2/gg} module exports ggplot2 functions
+".__module__."
+
+# contents of ggp2/gg.R
+
+#' @export
+box::use(
+  ggplot2 = ggplot2[...]
+  )
+```
+
+
+```{r use-gg}
+box::use(ggp2/gg)
+gg
+```
+
+This can now be used with `gg$`:
+
+```{r use-module-gg}
+gg$ggplot(gg$mpg, 
+  gg$aes(x = displ, y = hwy)) + 
+  gg$geom_point()
+```
+
+### `line`
+
+The `line` module contains a `graph()` function, which also imports the 
+
+```{r module-line, eval=FALSE}
+# contents of ggp2/line.R
+
+#' line functions from 
+#' @export
+box::use(
+  ggplot2 = ggplot2[ggplot, aes, geom_point]
+  )
+
+#' graph function
+#' @export
+graph <- function() {
+  ggplot(
+    mpg,
+    aes(x = displ, y = hwy)
+  ) +
+    geom_point()
+}
+```
+
+
+```{r use-line}
+# box::unload(line)
+box::use(ggp2/line)
+line
+```
+
+
+```{r line-graph}
+line$graph()
 ```
 
 ## `penguins`
@@ -250,130 +462,13 @@ ggp2
 
 Check our scatter plot with `ggp2$scatter()`
 
-```{r use-scatter, eval=FALSE}
+```{r use-scatter}
 ggp2$scatter()
 ```
 
-![](https://raw.githubusercontent.com/mjfrigaard/rbox/main/boxes/scatter-out.png)
+<!-- ![](https://raw.githubusercontent.com/mjfrigaard/rbox/main/boxes/scatter-out.png) -->
 
 And there you have it! A complete pipeline using `box` modules. Next I'll explore using `penguins/__init__.R`
-
-
-
-
-## `tidy`
-
-This is a simple example for the Rhino app post. 
-
-```{r tidy-dir, echo=FALSE, comment=""}
-fs::dir_tree("tidy")
-```
-
-I'm going to be using the `tidyverse::tidyverse_logo()` to demonstrate different ways of importing a single function from a package in a `box` module. It's important to note `tidyverse` has been installed, but not loaded. 
-
-```{r, error=TRUE}
-tidyverse_logo()
-```
-
-#### `logo`
-
-Inside the `tidy/logo.R` is the `tidy/logo` module containing the following code for importing the `tidyverse_logo()` function from the `tidyverse` meta-package:
-
-```{r module-logo, eval=FALSE}
-# contents of tidy/logo.R
-#' @export
-box::use(
-  tidyverse[tidyverse_logo]
-  )
-```
-
-
-I can import the `tidyverse_logo()` function (and only this function) using the `tidy/logo` module:
-
-```{r use-logo}
-box::use(tidy/logo)
-logo
-ls(logo)
-```
-
-To use the `tidyverse_logo()` function, I use `$`:
-
-```{r run-logo}
-logo$tidyverse_logo()
-```
-
-
-#### `plogo` 
-
-We can also include `box::use()` to import `tidyverse_logo()` *inside* a custom function (`plogo`) 
-
-```{r plogo-module, eval=FALSE}
-# contents of tidy/plogo.R
-
-#' prints tidyverse logo
-#' @export
-print_logo = function(){
-  # import pkg[fun] inside function
-box::use(
-  tidyverse[tidyverse_logo])
-  # use fun
-    tidyverse_logo()
-}
-```
-
-Use this module just like `tidy/logo`:
-
-```{r use-plogo}
-box::use(tidy/plogo)
-ls(plogo)
-```
-
-```{r run-plogo}
-plogo$print_logo()
-```
-
-Both methods import `tidyverse`'s `tidyverse::tidyverse_logo()` function, but not the entire package: 
-
-```{r recheck-tidyverse_logo, error=TRUE}
-tidyverse_logo()
-```
-
-#### `tidy_logo`
-
-The `tidy_logo` module contains the following: 
-
-```{r module_tidy_logo, eval=FALSE}
-# contents of tidy/tidy_logo.R
-
-#' import alias tidyverse logo
-#' @export
-box::use(
-  tidyverse[tidy_logo = tidyverse_logo]
-  )
-
-#' prints tidyverse logo
-#' @export
-print_logo = function(){
-  # use fun alias
-    tidy_logo()
-}
-```
-
-Confirm both functions have been imported:
-
-```{r use_tidy_logo}
-box::use(tidy/tidy_logo)
-ls(tidy_logo)
-```
-
-Are these identical? 
-
-```{r identical_tidy_logo}
-identical(
-  x = tidy_logo$print_logo(), 
-  y = tidy_logo$tidy_logo()
-  )
-```
 
 
 <!--
